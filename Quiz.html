@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>Online Quiz Application</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #ae4b4b;
+      padding: 20px;
+    }
+    h1{
+      text-align: center;
+      color: rgb(32, 35, 35);
+
+    }
+    .container {
+      background: #a19c9c;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+      max-width: 700px;
+      margin: auto;
+    }
+    .question {
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+    .option {
+      display: block;
+      margin-bottom: 5px;
+    }
+    .buttons {
+      margin-top: 20px;
+    }
+    button {
+      padding: 10px 20px;
+      margin: 5px;
+    }
+    #timer {
+      float: right;
+      font-weight: bold;
+      color: red;
+    }
+  </style>
+</head>
+<body>
+
+<div class="container">
+  <div id="startPage">
+    <div>
+      <h1 class="mock test">MOCK TEST</h1>
+    </div>
+    <h2>Attempt Quiz</h2>
+    <p>Date: <span id="date"></span></p>
+    <button onclick="startQuiz()">Start Quiz</button>
+  </div>
+
+  <div id="quizPage" style="display: none;">
+    <div id="timer"></div>
+    <div id="questionContainer"></div>
+    <div class="buttons">
+      <button onclick="prevQuestion()">Previous</button>
+      <button onclick="nextQuestion()">Next</button>
+      <button onclick="submitQuiz()">Submit</button>
+    </div>
+  </div>
+
+  <div id="resultPage" style="display: none;">
+    <h2>Quiz Result</h2>
+    <p id="score"></p>
+    <p id="attempts"></p>
+    <p id="blanks"></p>
+  </div>
+</div>
+
+<script>
+const questions = [
+  {
+    q: "1. What does HTML stand for? / HTML का पूरा नाम क्या है?",
+    options: ["a. Hyper Text Markup Language", "b. High Text Markup Language", "c. Hyper Tabular Markup Language", "d. None of the above"],
+    answer: 0
+  },
+  {
+    q: "2. What is the use of CSS in web development? / वेब विकास में CSS का उपयोग क्या है?",
+    options: ["a. To store data", "b. Tostyle web pages", "c. To create databases", "d. To add interactivity"],
+    answer: 1
+  },
+  {
+    q: "3.  What does the <br> tag do? / <br> टैग क्या करता है?",
+    options: ["a.  Adds bold text", "b. Adds a line break", "c. Adds a new paragraph", "d. Adds a border"],
+    answer: 1
+  },
+  {
+    q: "4. Which of the following is a JavaScript framework? / निम्नलिखित में से कौन सा एक जावास्क्रिप्ट फ्रेमवर्क है?",
+    options: ["a. React", "b. Django", "c. Laravel", "d. Flask"],
+    answer: 0
+  },
+  {
+    q: "5. What does SQL stand for? / SQL का पूरा नाम क्या है?",
+    options: ["a. Structured Query Language", "b. Simple Query Language", "c. Sequential Query Language", "d. None of the above"],
+    answer: 0
+  },
+  {
+    q: "6. What is the default alignment of image in HTML? / HTML में इमेज का डिफ़ॉल्ट अलाइनमेंट क्या होता है?",
+    options: ["a. Left", "b. Center", "c. Right", "d. Justify"],
+    answer: 0
+  },
+  {
+    q: "7. What is the purpose of the <head> tag in HTML? / HTML में <head> टैग का उद्देश्य क्या है?",
+    options: ["a. To display content", "b. To include metadata", "c. To create links", "d. To add styles"],
+    answer: 1
+  },
+  {
+    q: "8. Which of the following is a valid CSS selector? / निम्नलिखित में से कौन सा एक मान्य CSS चयनकर्ता है?",
+    options: ["a. className", "b. #idName", "c. elementName", "d .className"],
+    answer: 3
+  },
+  {
+    q: "9. What is the purpose of the <div> tag in HTML? / HTML में <div> टैग का उद्देश्य क्या है?",
+    options: ["a. To create a division or section", "b. To add a link", "c. To display an image", "d. To create a form"],
+    answer: 0
+  },
+  {
+    q: "10. Which of the following is used to style HTML elements? / HTML तत्वों को स्टाइल करने के लिए निम्नलिखित में से कौन सा उपयोग किया जाता है?",
+    options: ["a. CSS", "b. JavaScript", "c. SQL", "d. PHP"],
+    answer: 0
+  },
+  {
+    q: "11. What is the purpose of the <a> tag in HTML? / HTML में <a> टैग का उद्देश्य क्या है?",
+    options: ["a. To create a link", "b. To display an image", "c. To create a form", "d. To add a script"],
+    answer: 0
+  }
+];
+
+let currentQuestion = 0;
+let userAnswers = new Array(questions.length).fill(null);
+let timerSeconds = 900; // 15 minutes
+let timerInterval;
+
+document.getElementById("date").innerText = new Date().toLocaleDateString();
+
+function startQuiz() {
+  document.getElementById("startPage").style.display = 'none';
+  document.getElementById("quizPage").style.display = 'block';
+  showQuestion();
+  startTimer();
+}
+
+function showQuestion() {
+  const q = questions[currentQuestion];
+  const container = document.getElementById("questionContainer");
+  container.innerHTML = `<div class='question'>${q.q}</div>`;
+  q.options.forEach((opt, index) => {
+    container.innerHTML += `
+      <label class="option">
+        <input type="radio" name="option" value="${index}" ${userAnswers[currentQuestion] == index ? 'checked' : ''}> ${opt}
+      </label>`;
+  });
+}
+
+document.getElementById("questionContainer").addEventListener("change", (e) => {
+  if (e.target.name === "option") {
+    userAnswers[currentQuestion] = parseInt(e.target.value);
+  }
+});
+
+function nextQuestion() {
+  if (currentQuestion < questions.length - 1) {
+    currentQuestion++;
+    showQuestion();
+  }
+}
+
+function prevQuestion() {
+  if (currentQuestion > 0) {
+    currentQuestion--;
+    showQuestion();
+  }
+}
+
+function submitQuiz() {
+  clearInterval(timerInterval);
+  let score = 0;
+  let attempts = 0;
+  userAnswers.forEach((ans, i) => {
+    if (ans !== null) {
+      attempts++;
+      if (ans === questions[i].answer) score++;
+    }
+  });
+  document.getElementById("quizPage").style.display = 'none';
+  document.getElementById("resultPage").style.display = 'block';
+  document.getElementById("score").innerText = `Score: ${score}/${questions.length}`;
+  document.getElementById("attempts").innerText = `Attempted: ${attempts}`;
+  document.getElementById("blanks").innerText = `Unattempted: ${questions.length - attempts}`;
+}
+
+function startTimer() {
+  timerInterval = setInterval(() => {
+    if (timerSeconds <= 0) {
+      clearInterval(timerInterval);
+      submitQuiz();
+    } else {
+      timerSeconds--;
+      const minutes = Math.floor(timerSeconds / 60);
+      const seconds = timerSeconds % 60;
+      document.getElementById("timer").innerText = `Time: ${minutes}:${seconds.toString().padStart(2, '0')}`;
+    }
+  }, 1000);
+}
+</script>
+
+</body>
+</html>
